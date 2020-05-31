@@ -11,10 +11,12 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Data;
+using System.IO;
 
 namespace PMS.Business.Handlers
 {
-    public class GetReportHandler : BaseHandler, IRequestHandler<GetProjectsInProgress, List<ReportResponse>>
+    public class GetReportHandler : BaseHandler, IRequestHandler<GetProjectsInProgress, ReportResponse>
     {
         private readonly IProjectStateResolver _projectStateResolver;
         public GetReportHandler(PmsContext dbContext, IProjectStateResolver projectStateResolver) : base(dbContext)
@@ -22,8 +24,13 @@ namespace PMS.Business.Handlers
             _projectStateResolver = projectStateResolver;
         }
 
-        public async Task<List<ReportResponse>> Handle(GetProjectsInProgress request, CancellationToken cancellationToken)
+        public async Task<ReportResponse> Handle(GetProjectsInProgress request, CancellationToken cancellationToken)
         {
+            var dt = new DataTable();
+            dt.Clear();
+            dt.Columns.Add("Project");
+            dt.Columns.Add("Task");
+
             var result = new List<ReportResponse>();
             var projects = await DbContext.Project.AsNoTracking()
                 .Include(i => i.Tasks)
@@ -34,40 +41,36 @@ namespace PMS.Business.Handlers
             foreach (var project in projects)
             {
                 var tasks = _projectStateResolver.GetProjectTasks(project);
-                var state = _projectStateResolver.GetProjectState(tasks);
-                if(state == Enums.ProjectState.inProgress)
+                var projectState = _projectStateResolver.GetProjectState(tasks);
+                if(projectState == Enums.ProjectState.inProgress)
                 {
-                    var tasksResponse = new List<TaskResponse>();
+                    var filteredTasks = tasks.Where(i => i.StateId == (int)Enums.TaskState.inProgress
+                        && i.StartDate <= request.Date && i.FinishDate >= request.Date).ToList();
 
-                    tasksResponse.AddRange(
-                        tasks.Where(i => i.StateId == (int)Enums.TaskState.inProgress)
-                        .Select(n => new TaskResponse {
-                            Id = n.Id,
-                            FinishDate = n.FinishDate,
-                            Name = n.Name,
-                            StartDate = n.StartDate,
-                            ProjectId = n.ProjectId
-                        })
-                    );
-
-                    result.Add(new ReportResponse
+                    filteredTasks.ForEach(t =>
                     {
-                        FinishDate = project.FinishDate,
-                        Name = project.Name,
-                        ProjectId = project.Id,
-                        StartDate = project.StartDate,
-                        Tasks = tasksResponse.ToArray()
+                        dt.Rows.Add(new object[] { project.Name, t.Name });
                     });
+
+                    dt.AcceptChanges();
                 }
             }
 
-            return await Task.FromResult(result);
+
+            var wb = new XLWorkbook();
+            wb.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            wb.Style.Font.Bold = true;
+
+            var wsh = wb.Worksheets.Add(dt, "Report");
+            //wsh.Cell("A1").Value = "Hello World!";
+            //wsh.Cell("A2").FormulaA1 = "=MID(A1, 7, 5)";
+
+            var stream = new MemoryStream();
+            wb.SaveAs(stream);
+            stream.Flush();
 
 
-            //var wb = new XLWorkbook();
-            ////DataTable dt = GetDataTableOrWhatever();
-            //wb.Worksheets.Add(dt, "WorksheetName");
-            //wb.Worksheets.Add()
+            return await Task.FromResult(new ReportResponse { FileData = stream});
         }
     }
 }

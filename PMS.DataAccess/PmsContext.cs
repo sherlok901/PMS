@@ -12,7 +12,7 @@ namespace PMS.DataAccess
             public PmsContext(DbContextOptions options)
                 : base(options)
             {
-                Database.EnsureDeleted();
+                //Database.EnsureDeleted();
                 Database.EnsureCreated();
             }
 

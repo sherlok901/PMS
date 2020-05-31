@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -23,9 +24,17 @@ namespace PMS.Controllers
         [HttpGet]
         public async Task<IActionResult> GetReport()
         {
-            var query = new GetProjectsInProgress();
+            var query = new GetProjectsInProgress { Date = DateTime.Now};
             var result = await _mediator.Send(query);
-            return result != null ? (IActionResult)Ok(result) : NotFound();
+            if(result == null)
+                return NotFound();
+
+            Response.ContentType = new MediaTypeHeaderValue("application/octet-stream").ToString();// Content type
+
+            result.FileData.Position = 0;
+            byte[] bytes = result.FileData.ToArray();
+
+            return File(bytes, "text/xlsx", "export.xlsx");
         }
     }
 }
