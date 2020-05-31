@@ -43,7 +43,7 @@ namespace PMS.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             //TODO: validate command
-            var result = await _mediator.Send(new DeleteProjectCommand { id });
+            var result = await _mediator.Send(new DeleteProjectCommand { Id = id });
             return result != null ? (IActionResult)Ok(result) : BadRequest(new ValidationResponse { Code = 1, Message = "Validation message" });
         }
     }
