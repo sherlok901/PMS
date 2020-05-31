@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PMS.Business.Handlers;
+using PMS.Business.Resolvers;
 using PMS.DataAccess.Db;
 
 namespace PMS
@@ -30,14 +31,15 @@ namespace PMS
         public void ConfigureServices(IServiceCollection services)
         {
             string connection = Configuration.GetConnectionString("DefaultConnection");
-            // добавляем контекст MobileContext в качестве сервиса в приложение
+
             services.AddDbContext<PmsContext>(options =>
                 options.UseSqlServer(connection));
-            //services.AddControllersWithViews();
 
             services.AddControllers();
             
             services.AddMediatR(typeof(GetProjectHandler).Assembly);
+
+            services.AddTransient<IProjectStateResolver, ProjectStateResolver>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

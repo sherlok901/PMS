@@ -23,7 +23,7 @@ namespace PMS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetById(int id)
+        public async Task<IActionResult> GetById(int id = 1)
         {
             var query = new GetProjectByIdQuery(id);
             var result = await _mediator.Send(query);

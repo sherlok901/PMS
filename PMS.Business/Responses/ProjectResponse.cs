@@ -10,7 +10,6 @@ namespace PMS.Business.Responses
         public string Name { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime FinishDate { get; set; }
-        public int StateId { get; set; }
         public string State { get; set; }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace PMS.Domain
 {
@@ -10,6 +11,8 @@ namespace PMS.Domain
         public string Name { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime FinishDate { get; set; }
-        public int StateId { get; set; }
+        public List<Task> Tasks { get; set; }
+        public Project Parent { get; set; }
+        public List<Project> Children { get; set; }
     }
 }
